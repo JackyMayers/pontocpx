@@ -1,0 +1,158 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Controle de ponto HMAS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+</head>
+<body>
+    
+    <h2>Controle de ponto HMAS</h2>
+
+    <form id="formDados">
+        ID: <input type="text" id="idInput" placeholder="Digite o ID"> <br><br>
+        Nome: <input type="text" id="nomeInput" placeholder="Digite o Nome"> <br><br>
+        Função: <input type="text" id="funcaoInput" placeholder="Digite a Função"> <br><br>
+        <textarea id="dadosInput" placeholder="Cole os dados aqui no formato: DD/MM/AAAA - HH horas MM minutos"></textarea><br><br>
+        <button type="button" onclick="processarDados()">Processar Dados</button><br><br>
+    </form>
+
+    <ul id="listaDados"></ul>
+
+    <button type="button" onclick="calcularResultados()">Calcular</button>
+
+    <p id="resultado"></p>
+
+    <p id="horasFaltantes"></p>
+
+    <textarea id="justificativaInput" placeholder="Justificar ausência caso não tenha atingido a meta"></textarea><br><br>
+    <button type="button" onclick="salvarEmBlocoDeNotas()">Salvar em Bloco de Notas</button>
+
+    <script>
+        let dados = [];
+        let totalMinutosFaltantes = 0;
+
+        function processarDados() {
+            let id = document.getElementById("idInput").value;
+            let nome = document.getElementById("nomeInput").value;
+            let funcao = document.getElementById("funcaoInput").value;
+            let dadosInput = document.getElementById("dadosInput").value;
+            let dadosSeparados = dadosInput.split('\n');
+            dados = dados.concat(dadosSeparados.map(item => {
+                return { id: id, nome: nome, funcao: funcao, dados: item };
+            }));
+            exibirDados();
+        }
+
+        function exibirDados() {
+            let lista = document.getElementById("listaDados");
+            lista.innerHTML = "";
+            dados.forEach(item => {
+                let li = document.createElement("li");
+                li.appendChild(document.createTextNode(item.dados));
+                lista.appendChild(li);
+            });
+        }
+
+        function calcularResultados() {
+            let totalMinutos = 0;
+            let diasTrabalhados = new Set();
+
+            dados.forEach(item => {
+                let partes = item.dados.split(' - ');
+                if (partes.length === 2) {
+                    let data = moment(partes[0], 'DD/MM/YYYY');
+                    if (data.isValid()) {
+                        diasTrabalhados.add(data.format('DD/MM/YYYY'));
+                    }
+
+                    let tempo = partes[1].split(' ');
+                    let horas = 0;
+                    let minutos = 0;
+                    for (let i = 0; i < tempo.length; i++) {
+                        if (tempo[i] === 'hora' || tempo[i] === 'horas') {
+                            horas = parseInt(tempo[i - 1]) || 0;
+                        }
+                        if (tempo[i] === 'minuto' || tempo[i] === 'minutos') {
+                            minutos = parseInt(tempo[i - 1]) || 0;
+                        }
+                    }
+                    totalMinutos += horas * 60 + minutos;
+                }
+            });
+
+            let totalHoras = Math.floor(totalMinutos / 60);
+            let totalMinutosExatos = totalMinutos % 60;
+
+            let atingiuMetaHoras = totalHoras >= 7;
+            let atingiuMetaDias = diasTrabalhados.size >= 3;
+
+            let resultado = `Tempo total trabalhado: ${totalHoras} horas e ${totalMinutosExatos} minutos.`;
+            resultado += `<br>`;
+            resultado += `Dias trabalhados: ${diasTrabalhados.size}.`;
+            resultado += `<br>`;
+
+            if (atingiuMetaHoras) {
+                resultado += `A meta de 7 horas foi batida. `;
+            } else {
+                resultado += `A meta de 7 horas não foi batida. `;
+                calcularHorasFaltantes(totalHoras, totalMinutosExatos);
+            }
+
+            if (atingiuMetaDias) {
+                resultado += `A meta de 3 dias foi batida. `;
+            } else {
+                resultado += `A meta de 3 dias não foi batida. `;
+            }
+
+            let justificativa = document.getElementById("justificativaInput").value;
+            if (justificativa.trim() !== '') {
+                resultado += `<br>Justificativa: ${justificativa}`;
+            }
+
+            document.getElementById("resultado").innerHTML = resultado;
+        }
+
+        function calcularHorasFaltantes(totalHoras, totalMinutosExatos) {
+            let minutosFaltantes = 7 * 60 - (totalHoras * 60 + totalMinutosExatos);
+            let horasFaltantes = Math.floor(minutosFaltantes / 60);
+            let minutosRestantes = minutosFaltantes % 60;
+
+            let resultText = `Faltam ${horasFaltantes} horas e ${minutosRestantes} minutos para atingir a meta de 7 horas na semana.`;
+            document.getElementById("horasFaltantes").innerHTML = resultText;
+        }
+
+        function salvarEmBlocoDeNotas() {
+            let conteudo = `ID: ${document.getElementById("idInput").value}\n`;
+            conteudo += `Nome: ${document.getElementById("nomeInput").value}\n`;
+            conteudo += `Função: ${document.getElementById("funcaoInput").value}\n\n`;
+
+            let justificativa = document.getElementById("justificativaInput").value;
+            if (justificativa.trim() !== '') {
+                conteudo += `Justificativa: ${justificativa}\n\n`;
+            }
+
+            conteudo += `Resultados: ${document.getElementById("resultado").innerText}\n`;
+
+            let horasFaltantes = document.getElementById("horasFaltantes").innerText;
+            conteudo += `Horas que faltam: ${horasFaltantes}\n`;
+
+            conteudo += `Dados:\n`;
+            dados.forEach(item => {
+                conteudo += `${item.dados}\n`;
+            });
+
+            let blob = new Blob([conteudo], { type: 'text/plain' });
+            let url = URL.createObjectURL(blob);
+            let a = document.createElement('a');
+            a.href = url;
+            a.download = `${document.getElementById("idInput").value}_${document.getElementById("nomeInput").value}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+    <center>
+        <img src="https://cdn.discordapp.com/attachments/1121604849159647273/1182749919933644860/image.png?ex=658f0f33&is=657c9a33&hm=fb1e4f726550403d04a0cae9b8f178414c9f0f1f75b0f9239a8d5a733f529571&" alt="">
+    </center>
+</body>
+</html>
