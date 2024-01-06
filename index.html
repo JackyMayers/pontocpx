@@ -84,7 +84,7 @@
             let totalHoras = Math.floor(totalMinutos / 60);
             let totalMinutosExatos = totalMinutos % 60;
 
-            let atingiuMetaHoras = totalHoras >= 7;
+            let atingiuMetaHoras = totalHoras >= 10;
             let atingiuMetaDias = diasTrabalhados.size >= 3;
 
             let resultado = `Tempo total trabalhado: ${totalHoras} horas e ${totalMinutosExatos} minutos.`;
@@ -93,9 +93,9 @@
             resultado += `<br>`;
 
             if (atingiuMetaHoras) {
-                resultado += `A meta de 7 horas foi batida. `;
+                resultado += `A meta de 10 horas foi batida. `;
             } else {
-                resultado += `A meta de 7 horas não foi batida. `;
+                resultado += `A meta de 10 horas não foi batida. `;
                 calcularHorasFaltantes(totalHoras, totalMinutosExatos);
             }
 
@@ -114,11 +114,11 @@
         }
 
         function calcularHorasFaltantes(totalHoras, totalMinutosExatos) {
-            let minutosFaltantes = 7 * 60 - (totalHoras * 60 + totalMinutosExatos);
+            let minutosFaltantes = 10 * 60 - (totalHoras * 60 + totalMinutosExatos);
             let horasFaltantes = Math.floor(minutosFaltantes / 60);
             let minutosRestantes = minutosFaltantes % 60;
 
-            let resultText = `Faltam ${horasFaltantes} horas e ${minutosRestantes} minutos para atingir a meta de 7 horas na semana.`;
+            let resultText = `Faltam ${horasFaltantes} horas e ${minutosRestantes} minutos para atingir a meta de 10 horas na semana.`;
             document.getElementById("horasFaltantes").innerHTML = resultText;
         }
 
